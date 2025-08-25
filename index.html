@@ -1,552 +1,154 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>XGallery – Ảnh & Video (Pomf2 + JW Player)</title>
-<style>
-:root{
-  --bg:#0f1115; --panel:#121725; --card:#171c2b; --text:#e6ecf3; --muted:#9fb0c7;
-  --border:#1f2740; --accent:#58a6ff; --accent-2:#8b5cf6; --ok:#22c55e; --warn:#f59e0b;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-
-/* Header */
-header{
-  position:sticky; top:0; z-index:50; background:linear-gradient(180deg,#0e1422 0,#0f1115 100%);
-  border-bottom:1px solid var(--border);
-}
-.header-inner{max-width:1200px;margin:0 auto;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.logo{font-weight:700;letter-spacing:.4px}
-.logo b{color:var(--accent)}
-.search{flex:1;display:flex;gap:8px}
-.search input,.search select{
-  background:var(--card);border:1px solid var(--border);color:var(--text);
-  padding:8px 10px;border-radius:10px;outline:none;width:100%;
-}
-.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);
-  padding:8px 12px;border-radius:10px;cursor:pointer}
-.btn:hover{border-color:#2a3558}
-.badge{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
-.badge.ok{border-color:#1f7a46;color:#7ae2a5}
-.badge.warn{border-color:#7a5d1f;color:#ffd78a}
-
-/* Layout */
-main{max-width:1200px;margin:14px auto;padding:0 16px;display:grid;grid-template-columns:220px 1fr;gap:16px}
-aside{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;height:max-content;position:sticky;top:74px}
-aside h3{margin:8px 6px 6px;font-size:14px;color:var(--muted);font-weight:600}
-.filter-group{display:flex;flex-direction:column;gap:8px;padding:6px}
-.filter-group label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
-.filter-group input[type="checkbox"]{width:16px;height:16px}
-
-/* Grid */
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-@media (min-width:740px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.card{
-  background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;
-  display:flex;flex-direction:column;min-height:100%;position:relative
-}
-.card .thumb{
-  background:#0b0f18; aspect-ratio:3/4; display:block; width:100%; object-fit:cover;
-}
-.card .body{padding:10px;display:flex;flex-direction:column;gap:6px}
-.card h4{margin:0;font-size:14px;line-height:1.3}
-.meta{display:flex;gap:8px;flex-wrap:wrap}
-.meta .tag{font-size:12px;color:var(--muted)}
-.card .actions{display:flex;gap:8px;margin-top:auto}
-.small{font-size:12px;color:var(--muted)}
-.skel{animation:sk 1.2s linear infinite;background:linear-gradient(90deg,#0e1527 25%,#121a33 37%,#0e1527 63%);border-radius:10px}
-@keyframes sk{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
-
-/* Pagination */
-.pager{display:flex;justify-content:center;gap:8px;margin:16px 0}
-.pager button{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
-
-/* Drawer (Import) */
-.drawer{position:fixed;right:16px;bottom:16px;z-index:60}
-.fab{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--border);background:var(--panel);cursor:pointer}
-.panel{
-  position:fixed;inset:auto 16px 80px auto;max-width:520px;width:calc(100% - 32px);
-  background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:none;z-index:70
-}
-.panel.open{display:block}
-.panel textarea, .panel input{
-  width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
-  padding:8px 10px;border-radius:10px;outline:none
-}
-.panel .row{display:flex;gap:8px;flex-wrap:wrap}
-.panel .row .btn{flex:1}
-
-/* Viewer Modal */
-.modal{position:fixed;inset:0;background:rgba(4,6,10,.76);display:none;align-items:center;justify-content:center;z-index:100}
-.modal.open{display:flex}
-.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:1000px;width:96%;max-height:92%;display:flex;flex-direction:column;overflow:hidden}
-.modal header{position:static;background:transparent;border:none}
-.modal .content{padding:12px;overflow:auto;display:flex;gap:16px}
-.viewer-sidebar{width:240px;min-width:240px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;height:max-content}
-.viewer-main{flex:1;min-width:0}
-.viewer-main img{display:block;width:100%;height:auto;margin-bottom:8px;border-radius:10px;border:1px solid var(--border);background:#0b0f18}
-.viewer-main video{width:100%;border-radius:12px;border:1px solid var(--border);background:#000}
-.source-switch{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.source-switch .btn.active{outline:2px solid var(--accent)}
-.close{position:absolute;right:10px;top:10px}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>XGallery – Video/Ảnh</title>
+  <style>
+    :root {
+      --bg:#0f1115; --card:#151922; --text:#e8edf2; --muted:#a8b3c7;
+      --border:#20283a; --accent:#4ea1ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif}
+    header{position:sticky;top:0;background:#10131b;border-bottom:1px solid var(--border);z-index:10;padding:10px;text-align:center}
+    main{display:flex}
+    aside{width:220px;padding:10px;border-right:1px solid var(--border)}
+    section{flex:1;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer}
+    .card img{width:100%;height:160px;object-fit:cover;display:block}
+    .card h3{margin:8px;font-size:14px}
+    .badge{display:inline-block;padding:2px 6px;font-size:11px;margin:2px;border-radius:3px;background:var(--accent);color:#fff}
+    #viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;z-index:1000}
+    #viewerMain{flex:1;display:flex;align-items:center;justify-content:center}
+    #viewer footer{padding:10px;background:#111;border-top:1px solid var(--border);text-align:center}
+    video,iframe{max-width:100%;max-height:100%}
+    button.btn{margin:0 4px;padding:6px 10px;cursor:pointer}
+  </style>
 </head>
 <body>
-<header>
-  <div class="header-inner">
-    <div class="logo">X<b>Gallery</b></div>
-    <div class="search">
-      <input id="q" type="search" placeholder="Tìm theo tên, tag, Fall..." />
-      <select id="sort">
-        <option value="new">Mới nhất</option>
-        <option value="az">A → Z</option>
-        <option value="za">Z → A</option>
-      </select>
+  <header><h1>XGallery</h1></header>
+  <main>
+    <aside>
+      <h4>Bộ lọc</h4>
+      <label><input type="checkbox" class="f-type" value="video" checked> Video</label><br/>
+      <label><input type="checkbox" class="f-type" value="images" checked> Ảnh</label><br/>
+      <label><input type="checkbox" class="f-src" value="pomf2" checked> Nguồn: Pomf2</label><br/>
+      <label><input type="checkbox" class="f-src" value="jwplayer" checked> Nguồn: JW Player</label><br/>
+      <label><input type="checkbox" class="f-src" value="archive" checked> Nguồn: Archive</label>
+    </aside>
+    <section id="grid"></section>
+  </main>
+
+  <!-- Viewer -->
+  <div id="viewer">
+    <div id="viewerMain">
+      <div id="jwplayerDiv" style="display:none;aspect-ratio:16/9"></div>
+      <video id="html5Video" controls preload="metadata"></video>
+      <iframe id="archiveFrame" style="display:none;width:100%;aspect-ratio:16/9" frameborder="0" allowfullscreen></iframe>
     </div>
-    <button class="btn" id="reloadBtn">Nạp dữ liệu</button>
-    <span class="badge warn">zerdata + BG + Pomf2/JW</span>
+    <footer>
+      <div id="sourceSwitch"></div>
+      <button onclick="closeViewer()" class="btn">Đóng</button>
+    </footer>
   </div>
-</header>
-
-<main>
-  <aside>
-    <h3>Bộ lọc</h3>
-    <div class="filter-group">
-      <label><input type="checkbox" class="f-type" value="images" checked> Album ảnh</label>
-      <label><input type="checkbox" class="f-type" value="video" checked> Video</label>
-      <label><input type="checkbox" class="f-src" value="pomf2" checked> Nguồn: Pomf2</label>
-      <label><input type="checkbox" class="f-src" value="jwplayer" checked> Nguồn: JW Player</label>
-    </div>
-    <h3>Nhập dữ liệu</h3>
-    <div class="filter-group small">
-      - Đặt <code>zerdata_make_manifest.json</code> cạnh <code>index.html</code><br>
-      - Bìa để trong thư mục <code>BG/</code> theo dạng <code>&lt;slug(name)&gt;.bg.(jpg|jpeg|png|webp)</code>
-    </div>
-  </aside>
-
-  <section>
-    <div id="grid" class="grid"></div>
-    <div class="pager" id="pager"></div>
-  </section>
-</main>
-
-<!-- Viewer Modal -->
-<div class="modal" id="modal">
-  <div class="box">
-    <button class="btn close" id="closeModal">✕</button>
-    <header class="header-inner" style="padding:10px 12px">
-      <div id="v-title" class="logo"></div>
-      <div class="source-switch" id="sourceSwitch"></div>
-      <span class="badge" id="v-type"></span>
-    </header>
-    <div class="content">
-      <div class="viewer-sidebar">
-        <div class="small">Bìa</div>
-        <img id="v-cover" class="thumb" alt="" />
-        <div style="margin-top:8px" class="small">Tags</div>
-        <div id="v-tags" class="meta"></div>
-        <div style="margin-top:8px" class="small">Nguồn</div>
-        <div id="v-sources" class="meta"></div>
-      </div>
-      <div class="viewer-main">
-        <div id="videoWrap" style="display:none">
-          <!-- JW Player container -->
-          <div id="jwplayerDiv" style="display:none; aspect-ratio:16/9"></div>
-          <!-- HTML5 fallback -->
-          <video id="html5Video" controls preload="metadata"></video>
-        </div>
-        <div id="imagesWrap" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
-/* =======================
-   1) Cấu hình JW Player
-========================= */
-const JW_LIBRARY = ""; // ví dụ: "https://cdn.jwplayer.com/libraries/XXXXXX.js"
-let jwlibLoaded = false;
-async function ensureJW() {
-  if (!JW_LIBRARY) return false;
-  if (jwlibLoaded) return true;
-  await new Promise((res, rej) => {
-    const s = document.createElement("script");
-    s.src = JW_LIBRARY; s.async = true;
-    s.onload = () => { jwlibLoaded = true; res(); };
-    s.onerror = () => rej();
-    document.head.appendChild(s);
-  }).catch(()=>{});
-  return jwlibLoaded;
-}
+const grid = document.getElementById("grid");
+const viewer = document.getElementById("viewer");
+const html5Video = document.getElementById("html5Video");
+const jwDiv = document.getElementById("jwplayerDiv");
+const archiveFrame = document.getElementById("archiveFrame");
+const sourceSwitch = document.getElementById("sourceSwitch");
 
-/* =======================
-   2) Tiện ích chung
-========================= */
-function slug(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
-function badge(txt, kind){const e=document.createElement("span");e.className="badge "+(kind||"");e.textContent=txt;return e}
+let items = [], currentId=null;
 
-/* Thử tìm bìa: BG/<slug>.bg.(jpg|jpeg|png|webp) */
-async function resolveCoverByBG(slugId){
-  const exts = ["jpg","jpeg","png","webp"];
-  for(const ext of exts){
-    const url = `BG/${slugId}.bg.${ext}`;
-    const ok = await new Promise(r=>{
-      const im = new Image();
-      im.onload = ()=>r(true);
-      im.onerror = ()=>r(false);
-      im.src = url + `?ts=${Date.now()}`;
-    });
-    if(ok) return url;
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");}
+
+async function resolveCoverByBG(id){
+  const exts=["jpg","jpeg","png","webp"];
+  for(const e of exts){
+    const url=`BG/${id}.bg.${e}`;
+    try{let r=await fetch(url,{method:"HEAD"});if(r.ok) return url;}catch{}
   }
   return "";
 }
 
-/* =======================
-   3) State & UI refs
-========================= */
-const state = {
-  items: [], filtered: [], page: 1, perPage: 16,
-  typeFilter: new Set(["images","video"]),
-  srcFilter: new Set(["pomf2","jwplayer"])
-};
-const gridEl = document.getElementById("grid");
-const pagerEl = document.getElementById("pager");
-const qEl = document.getElementById("q");
-const sortEl = document.getElementById("sort");
-
-/* =======================
-   4) Nạp dữ liệu ngoài
-========================= */
-async function loadZerdataManifest(){
-  try{
-    const res = await fetch("zerdata_make_manifest.json",{cache:"no-store"});
-    if(!res.ok) return [];
-    const rows = await res.json(); // [{name, link}]
-    const out = [];
-    for(const row of rows){
-      if(!row?.name || !row?.link) continue;
-      const id = slug(row.name);
-      const cover = await resolveCoverByBG(id);
-      out.push({
-        id,
-        title: row.name,
-        cover,
-        type: "video",
-        tags: [row.name],
-        _ts: Date.now(),
-        sources: { pomf2: [row.link], jwplayer: {} }
-      });
+async function loadManifest(){
+  const res = await fetch("zerdata_make_manifest.json?"+Date.now());
+  if(!res.ok) return [];
+  const rows = await res.json();
+  const out=[];
+  for(const row of rows){
+    const id = slug(row.name);
+    const cover = await resolveCoverByBG(id);
+    const sources={};
+    if (/archive\.org\//i.test(row.link)){
+      let m=row.link.match(/archive\.org\/(?:details|embed)\/([^/?#]+)/i);
+      const arcId=m?m[1]:null;
+      sources.archive={id:arcId,embed:arcId?`https://archive.org/embed/${arcId}`:row.link};
+    } else if (/pomf2\.lain\.la\//i.test(row.link)){
+      sources.pomf2=[row.link];
+    } else {
+      sources.jwplayer={file:row.link};
     }
-    return out;
-  }catch(e){ return []; }
+    out.push({id,title:row.name,cover,type:"video",sources});
+  }
+  return out;
 }
 
-/* (Giữ để tương thích nếu bạn còn đặt manifest.json / LinkVD.txt) */
-async function loadExternalData() {
-  const loaded = [];
-  // manifest.json
-  try{
-    const res = await fetch("manifest.json",{cache:"no-store"});
-    if(res.ok){
-      const json = await res.json();
-      if(Array.isArray(json)) loaded.push(...json);
-    }
-  }catch(e){}
-  // LinkVD.txt (format: "FallX link, link")
-  try{
-    const res = await fetch("LinkVD.txt",{cache:"no-store"});
-    if(res.ok){
-      const txt = await res.text();
-      const parsed = parseLinkVD(txt);
-      loaded.push(...parsed);
-    }
-  }catch(e){}
-  return loaded;
-}
-function parseLinkVD(txt){
-  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  const arr = [];
-  for(const line of lines){
-    const m = line.match(/^([^ ]+)\s+(.+)$/);
-    if(!m) continue;
-    const title = m[1];
-    const links = m[2].split(/[,\s]+/).map(s=>s.trim()).filter(Boolean);
-    arr.push({
-      id: slug(title),
-      title, cover:"", type:"video", tags:[title],
-      sources:{ pomf2: links, jwplayer:{} }
-    });
-  }
-  return arr;
-}
-
-/* =======================
-   5) Lọc + render grid
-========================= */
-function applyFilters(){
-  const q = qEl.value.trim().toLowerCase();
-  let arr = state.items.filter(it => state.typeFilter.has(it.type));
-
-  arr = arr.filter(it=>{
-    const hasPomf = it.sources?.pomf2?.length>0;
-    const hasJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
-    const needPomf = state.srcFilter.has("pomf2");
-    const needJwp = state.srcFilter.has("jwplayer");
-    return (needPomf && hasPomf) || (needJwp && hasJwp) || (!needPomf && !needJwp);
-  });
-
-  if(q){
-    arr = arr.filter(it=>{
-      const hay = (it.title+" "+(it.tags||[]).join(" ")).toLowerCase();
-      return hay.includes(q);
-    });
-  }
-
-  if(sortEl.value==="az") arr.sort((a,b)=>a.title.localeCompare(b.title));
-  else if(sortEl.value==="za") arr.sort((a,b)=>b.title.localeCompare(a.title));
-  else arr.sort((a,b)=> (b._ts||0)-(a._ts||0));
-
-  state.filtered = arr;
-  state.page = 1;
-  renderPage();
-}
-
-function renderPage(){
-  const start = (state.page-1)*state.perPage;
-  const end = start + state.perPage;
-  const pageItems = state.filtered.slice(start,end);
-
-  gridEl.innerHTML = "";
-  for(const it of pageItems){
-    const card = document.createElement("div");
-    card.className = "card";
-    const img = document.createElement("img");
-    img.className = "thumb";
-    img.loading = "lazy";
-    img.alt = "";
-    img.src = it.cover || "https://picsum.photos/400/560?blur=3";
-    card.appendChild(img);
-
-    const body = document.createElement("div");
-    body.className = "body";
-    const h4 = document.createElement("h4");
-    h4.textContent = it.title;
-    body.appendChild(h4);
-
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    const t = document.createElement("span");
-    t.className = "tag";
-    t.textContent = it.type==="video" ? "Video" : "Album ảnh";
-    meta.appendChild(t);
-
-    const sPomf = (it.sources?.pomf2?.length||0) > 0;
-    const sJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
-    if(sPomf) meta.appendChild(badge("POMF2","ok"));
-    if(sJwp) meta.appendChild(badge("JW","ok"));
-    body.appendChild(meta);
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-    const openBtn = document.createElement("button");
-    openBtn.className = "btn";
-    openBtn.textContent = "Mở";
-    openBtn.onclick = ()=>openViewer(it.id);
-    actions.appendChild(openBtn);
-    body.appendChild(actions);
-
-    card.appendChild(body);
-    gridEl.appendChild(card);
-  }
-
-  const pages = Math.max(1, Math.ceil(state.filtered.length / state.perPage));
-  pagerEl.innerHTML = "";
-  if(pages>1){
-    const prev = document.createElement("button");
-    prev.textContent = "← Trước";
-    prev.disabled = state.page===1;
-    prev.onclick = ()=>{state.page--; renderPage()};
-    pagerEl.appendChild(prev);
-
-    const info = document.createElement("span");
-    info.className = "badge";
-    info.textContent = `Trang ${state.page}/${pages}`;
-    pagerEl.appendChild(info);
-
-    const next = document.createElement("button");
-    next.textContent = "Sau →";
-    next.disabled = state.page===pages;
-    next.onclick = ()=>{state.page++; renderPage()};
-    pagerEl.appendChild(next);
+function render(){
+  grid.innerHTML="";
+  for(const it of items){
+    const card=document.createElement("div");
+    card.className="card"; card.onclick=()=>openViewer(it.id);
+    if(it.cover){let img=document.createElement("img");img.src=it.cover;card.appendChild(img);}
+    let h3=document.createElement("h3");h3.textContent=it.title;card.appendChild(h3);
+    if(it.sources.pomf2) card.appendChild(b("Pomf2"));
+    if(it.sources.jwplayer) card.appendChild(b("JW"));
+    if(it.sources.archive) card.appendChild(b("Archive"));
+    grid.appendChild(card);
   }
 }
-
-/* =======================
-   6) Viewer (Pomf2 <-> JW Player)
-========================= */
-const modal = document.getElementById("modal");
-const vTitle = document.getElementById("v-title");
-const vType = document.getElementById("v-type");
-const vCover = document.getElementById("v-cover");
-const vTags = document.getElementById("v-tags");
-const vSources = document.getElementById("v-sources");
-const sourceSwitch = document.getElementById("sourceSwitch");
-const videoWrap = document.getElementById("videoWrap");
-const imagesWrap = document.getElementById("imagesWrap");
-const html5Video = document.getElementById("html5Video");
-const jwDiv = document.getElementById("jwplayerDiv");
-let currentId = null;
-
-function getItem(id){return state.items.find(x=>x.id===id)}
-
-function openViewer(id){
-  const it = getItem(id); if(!it) return;
-  vTitle.innerHTML = it.title;
-  vType.textContent = it.type==="video" ? "Video" : "Album ảnh";
-  vCover.src = it.cover || "";
-  vTags.innerHTML = ""; (it.tags||[]).forEach(t=> vTags.appendChild(badge(t)));
-  const hasPomf = it.sources?.pomf2?.length>0;
-  const hasJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
-  vSources.innerHTML = "";
-  if(hasPomf) vSources.appendChild(badge("Pomf2","ok"));
-  if(hasJwp) vSources.appendChild(badge("JW","ok"));
-
-  sourceSwitch.innerHTML = "";
-  if(it.type==="video"){
-    if(hasPomf){
-      const b=document.createElement("button"); b.className="btn active";
-      b.textContent="Nguồn: POMF2"; b.onclick=()=>switchSource("pomf2");
-      sourceSwitch.appendChild(b);
-    }
-    if(hasJwp){
-      const b=document.createElement("button"); b.className="btn";
-      b.textContent="Nguồn: JW Player"; b.onclick=()=>switchSource("jwplayer");
-      sourceSwitch.appendChild(b);
-    }
-  }
-
-  if(it.type==="video"){
-    imagesWrap.style.display="none";
-    videoWrap.style.display="block";
-    switchSource(hasPomf ? "pomf2" : "jwplayer", true);
-  }else{
-    videoWrap.style.display="none";
-    imagesWrap.style.display="block";
-    renderImages(it.images||it.sources?.pomf2||[]);
-  }
-
-  currentId = id;
-  modal.classList.add("open");
-}
+function b(t){let s=document.createElement("span");s.className="badge";s.textContent=t;return s;}
 
 function closeViewer(){
-  modal.classList.remove("open");
-  html5Video.pause();
-  html5Video.removeAttribute("src");
-  html5Video.load();
-  if(window.jwplayer && jwDiv.style.display!=="none"){
-    try{ window.jwplayer(jwDiv).remove(); }catch(e){}
-  }
-}
-document.getElementById("closeModal").onclick = closeViewer;
-
-function markActiveSource(src){
-  [...sourceSwitch.querySelectorAll(".btn")].forEach(b=>b.classList.remove("active"));
-  const btns = [...sourceSwitch.querySelectorAll(".btn")];
-  if(src==="pomf2" && btns[0]) btns[0].classList.add("active");
-  if(src==="jwplayer" && btns[1]) btns[1].classList.add("active");
+  viewer.style.display="none"; 
+  html5Video.pause(); html5Video.src=""; 
+  archiveFrame.src=""; 
+  if(window.jwplayer){try{jwplayer(jwDiv).remove();}catch{}}
 }
 
-async function switchSource(src, first=false){
-  const it = getItem(currentId); if(!it) return;
-  markActiveSource(src);
+function openViewer(id){
+  currentId=id;
+  const it=items.find(x=>x.id===id); if(!it) return;
+  viewer.style.display="flex";
+  let prefer=it.sources.pomf2?"pomf2":(it.sources.jwplayer?"jwplayer":"archive");
+  switchSource(prefer);
+  sourceSwitch.innerHTML="";
+  if(it.sources.pomf2){let b=document.createElement("button");b.className="btn";b.textContent="Nguồn: Pomf2";b.onclick=()=>switchSource("pomf2");sourceSwitch.appendChild(b);}
+  if(it.sources.jwplayer){let b=document.createElement("button");b.className="btn";b.textContent="Nguồn: JW Player";b.onclick=()=>switchSource("jwplayer");sourceSwitch.appendChild(b);}
+  if(it.sources.archive){let b=document.createElement("button");b.className="btn";b.textContent="Nguồn: Archive";b.onclick=()=>switchSource("archive");sourceSwitch.appendChild(b);}
+}
 
-  html5Video.pause(); html5Video.removeAttribute("src"); html5Video.load();
-  if(window.jwplayer){ try{ window.jwplayer(jwDiv).remove(); }catch(e){} }
-  jwDiv.style.display="none";
-
+async function switchSource(src){
+  const it=items.find(x=>x.id===currentId); if(!it) return;
+  html5Video.style.display="none"; jwDiv.style.display="none"; archiveFrame.style.display="none";
+  html5Video.pause(); html5Video.src=""; archiveFrame.src="";
   if(src==="pomf2"){
-    const url = (it.sources?.pomf2||[]).find(u=>/\.mp4(\?|$)/i.test(u)) || (it.sources?.pomf2||[])[0];
-    if(!url){ html5Video.removeAttribute("src"); return; }
-    html5Video.src = url; html5Video.poster = it.cover || ""; html5Video.load();
-    jwDiv.style.display="none";
-  }else if(src==="jwplayer"){
-    const jwp = it.sources?.jwplayer || {};
-    const hasMediaId = !!jwp.mediaId;
-    const hasFile = !!jwp.file;
-
-    const ok = await ensureJW();
-    if(ok){
-      jwDiv.style.display="block";
-      const setup = { width:"100%", aspectratio:"16:9", image:it.cover||undefined };
-      if(hasMediaId){ setup.file = `https://cdn.jwplayer.com/manifests/${jwp.mediaId}.m3u8`; }
-      else if(hasFile){ setup.file = jwp.file; }
-      if(setup.file){ window.jwplayer("jwplayerDiv").setup(setup); }
-    }else if(hasFile){
-      html5Video.src = jwp.file; html5Video.poster = it.cover||""; html5Video.load();
-    }
+    let raw=it.sources.pomf2[0];
+    let url=`https://mp4-proxy.tuvo9905.workers.dev/?u=${encodeURIComponent(raw)}`;
+    html5Video.style.display="block"; html5Video.src=url; html5Video.load();
+  } else if(src==="jwplayer"){
+    let f=it.sources.jwplayer.file;
+    html5Video.style.display="block"; html5Video.src=f; html5Video.load();
+  } else if(src==="archive"){
+    let emb=it.sources.archive.embed;
+    archiveFrame.style.display="block"; archiveFrame.src=emb;
   }
 }
 
-function renderImages(arr){
-  imagesWrap.innerHTML = "";
-  if(!arr || !arr.length){
-    const p=document.createElement("p"); p.className="small"; p.textContent="Không có ảnh";
-    imagesWrap.appendChild(p); return;
-  }
-  for(const src of arr){
-    const im = document.createElement("img");
-    im.loading="lazy"; im.src = src;
-    imagesWrap.appendChild(im);
-  }
-}
-
-/* =======================
-   7) Bộ lọc & sự kiện
-========================= */
-qEl.oninput = ()=>applyFilters();
-sortEl.onchange = ()=>applyFilters();
-document.getElementById("reloadBtn").onclick = async ()=>{ await init(true); };
-
-document.querySelectorAll(".f-type").forEach(cb=>{
-  cb.onchange = ()=>{ cb.checked ? state.typeFilter.add(cb.value) : state.typeFilter.delete(cb.value); applyFilters(); };
-});
-document.querySelectorAll(".f-src").forEach(cb=>{
-  cb.onchange = ()=>{ cb.checked ? state.srcFilter.add(cb.value) : state.srcFilter.delete(cb.value); applyFilters(); };
-});
-window.addEventListener("keydown", e=>{ if(e.key==="Escape" && modal.classList.contains("open")) closeViewer(); });
-
-/* =======================
-   8) Khởi động
-========================= */
-async function init(forceReload=false){
-  // nạp dữ liệu
-  const zdata = await loadZerdataManifest();     // zerdata_make_manifest.json
-  const extra = await loadExternalData();        // manifest.json / LinkVD.txt (nếu có)
-
-  // Gộp theo id và đảm bảo cover từ BG nếu thiếu
-  const map = new Map();
-  [...zdata, ...extra].forEach(it=>{
-    const id = it.id || slug(it.title || "");
-    map.set(id, { ...map.get(id), ...it, id });
-  });
-
-  for (const it of map.values()){
-    if(it.type === "video" && !it.cover){
-      it.cover = await resolveCoverByBG(it.id);
-    }
-    if(it._ts == null) it._ts = Date.now();
-  }
-
-  state.items = [...map.values()];
-  applyFilters();
-}
-
-init();
+loadManifest().then(r=>{items=r;render();});
 </script>
 </body>
 </html>
