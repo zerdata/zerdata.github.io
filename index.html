@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>XGallery – Ảnh & Video (Pomf2 + JW Player)</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#121725; --card:#171c2b; --text:#e6ecf3; --muted:#9fb0c7;
+  --border:#1f2740; --accent:#58a6ff; --accent-2:#8b5cf6; --ok:#22c55e; --warn:#f59e0b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+/* Header */
+header{
+  position:sticky; top:0; z-index:50; background:linear-gradient(180deg,#0e1422 0,#0f1115 100%);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{max-width:1200px;margin:0 auto;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{font-weight:700;letter-spacing:.4px}
+.logo b{color:var(--accent)}
+.search{flex:1;display:flex;gap:8px}
+.search input,.search select{
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:8px 10px;border-radius:10px;outline:none;width:100%;
+}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);
+  padding:8px 12px;border-radius:10px;cursor:pointer}
+.btn:hover{border-color:#2a3558}
+.badge{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.badge.ok{border-color:#1f7a46;color:#7ae2a5}
+.badge.warn{border-color:#7a5d1f;color:#ffd78a}
+
+/* Layout */
+main{max-width:1200px;margin:14px auto;padding:0 16px;display:grid;grid-template-columns:220px 1fr;gap:16px}
+aside{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;height:max-content;position:sticky;top:74px}
+aside h3{margin:8px 6px 6px;font-size:14px;color:var(--muted);font-weight:600}
+.filter-group{display:flex;flex-direction:column;gap:8px;padding:6px}
+.filter-group label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.filter-group input[type="checkbox"]{width:16px;height:16px}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:740px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1024px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column;min-height:100%;position:relative
+}
+.card .thumb{
+  background:#0b0f18; aspect-ratio:3/4; display:block; width:100%; object-fit:cover;
+}
+.card .body{padding:10px;display:flex;flex-direction:column;gap:6px}
+.card h4{margin:0;font-size:14px;line-height:1.3}
+.meta{display:flex;gap:8px;flex-wrap:wrap}
+.meta .tag{font-size:12px;color:var(--muted)}
+.card .actions{display:flex;gap:8px;margin-top:auto}
+.small{font-size:12px;color:var(--muted)}
+.skel{animation:sk 1.2s linear infinite;background:linear-gradient(90deg,#0e1527 25%,#121a33 37%,#0e1527 63%);border-radius:10px}
+@keyframes sk{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+
+/* Pagination */
+.pager{display:flex;justify-content:center;gap:8px;margin:16px 0}
+.pager button{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
+
+/* Drawer (Import) */
+.drawer{position:fixed;right:16px;bottom:16px;z-index:60}
+.fab{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--border);background:var(--panel);cursor:pointer}
+.panel{
+  position:fixed;inset:auto 16px 80px auto;max-width:520px;width:calc(100% - 32px);
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:none;z-index:70
+}
+.panel.open{display:block}
+.panel textarea, .panel input{
+  width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:8px 10px;border-radius:10px;outline:none
+}
+.panel .row{display:flex;gap:8px;flex-wrap:wrap}
+.panel .row .btn{flex:1}
+
+/* Viewer Modal */
+.modal{position:fixed;inset:0;background:rgba(4,6,10,.76);display:none;align-items:center;justify-content:center;z-index:100}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:1000px;width:96%;max-height:92%;display:flex;flex-direction:column;overflow:hidden}
+.modal header{position:static;background:transparent;border:none}
+.modal .content{padding:12px;overflow:auto;display:flex;gap:16px}
+.viewer-sidebar{width:240px;min-width:240px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;height:max-content}
+.viewer-main{flex:1;min-width:0}
+.viewer-main img{display:block;width:100%;height:auto;margin-bottom:8px;border-radius:10px;border:1px solid var(--border);background:#0b0f18}
+.viewer-main video{width:100%;border-radius:12px;border:1px solid var(--border);background:#000}
+.source-switch{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.source-switch .btn.active{outline:2px solid var(--accent)}
+.close{position:absolute;right:10px;top:10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo">X<b>Gallery</b></div>
+    <div class="search">
+      <input id="q" type="search" placeholder="Tìm theo tên, tag, Fall..." />
+      <select id="sort">
+        <option value="new">Mới nhất</option>
+        <option value="az">A → Z</option>
+        <option value="za">Z → A</option>
+      </select>
+    </div>
+    <button class="btn" id="reloadBtn">Nạp manifest/LinkVD</button>
+    <span class="badge warn">Pomf2 + JW Player</span>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <h3>Bộ lọc</h3>
+    <div class="filter-group">
+      <label><input type="checkbox" class="f-type" value="images" checked> Album ảnh</label>
+      <label><input type="checkbox" class="f-type" value="video" checked> Video</label>
+      <label><input type="checkbox" class="f-src" value="pomf2" checked> Nguồn: Pomf2</label>
+      <label><input type="checkbox" class="f-src" value="jwplayer" checked> Nguồn: JW Player</label>
+    </div>
+    <h3>Nhập dữ liệu</h3>
+    <div class="filter-group small">
+      - Đặt <code>manifest.json</code> và/hoặc <code>LinkVD.txt</code> cùng thư mục<br>
+      - Hoặc mở nút tròn (góc phải dưới) để dán nhanh
+    </div>
+  </aside>
+
+  <section>
+    <div id="grid" class="grid"></div>
+    <div class="pager" id="pager"></div>
+  </section>
+</main>
+
+<!-- Drawer Import -->
+<div class="drawer">
+  <button class="fab" id="openPanel">＋</button>
+  <div class="panel" id="panel">
+    <h3>Thêm nội dung nhanh</h3>
+    <div class="row">
+      <input id="title" placeholder="Tiêu đề (vd: Fall3)" />
+      <input id="cover" placeholder="Ảnh bìa (URL .jpg/.webp)" />
+      <select id="type">
+        <option value="video">Video</option>
+        <option value="images">Album ảnh</option>
+      </select>
+    </div>
+    <small class="small">Pomf2: dán 1 hoặc nhiều URL, cách nhau bởi dấu phẩy, xuống dòng…</small>
+    <textarea id="pomf2" rows="4" placeholder="https://pomf2.lain.la/f/abc.mp4, https://..."></textarea>
+    <small class="small">JW Player: dán <b>mediaId</b> (nếu dùng CDN jwplayer) hoặc URL HLS/MP4</small>
+    <input id="jw" placeholder="vd: abcd1234 (mediaId) hoặc https://...m3u8" />
+    <div class="row">
+      <button class="btn" id="addItem">Thêm vào bộ nhớ tạm</button>
+      <button class="btn" id="exportJson">Xuất manifest.json</button>
+    </div>
+    <hr style="border:0;border-top:1px solid var(--border);margin:12px 0">
+    <h4 class="small">Dán nhanh từ LinkVD.txt (định dạng “Fall* link, link”):</h4>
+    <textarea id="bulk" rows="5" placeholder="Fall3 https://pomf2...mp4, https://pomf2...mp4&#10;Fall4 https://pomf2..."></textarea>
+    <div class="row">
+      <button class="btn" id="parseBulk">Phân tích & thêm</button>
+      <button class="btn" id="closePanel">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Viewer Modal -->
+<div class="modal" id="modal">
+  <div class="box">
+    <button class="btn close" id="closeModal">✕</button>
+    <header class="header-inner" style="padding:10px 12px">
+      <div id="v-title" class="logo"></div>
+      <div class="source-switch" id="sourceSwitch"></div>
+      <span class="badge" id="v-type"></span>
+    </header>
+    <div class="content">
+      <div class="viewer-sidebar">
+        <div class="small">Bìa</div>
+        <img id="v-cover" class="thumb" alt="" />
+        <div style="margin-top:8px" class="small">Tags</div>
+        <div id="v-tags" class="meta"></div>
+        <div style="margin-top:8px" class="small">Nguồn</div>
+        <div id="v-sources" class="meta"></div>
+      </div>
+      <div class="viewer-main">
+        <div id="videoWrap" style="display:none">
+          <!-- JW Player container -->
+          <div id="jwplayerDiv" style="display:none; aspect-ratio:16/9"></div>
+          <!-- HTML5 fallback -->
+          <video id="html5Video" controls preload="metadata"></video>
+        </div>
+        <div id="imagesWrap" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =======================
+   1) Cấu hình JW Player
+   - Điền key nếu bạn có. Nếu để trống, trang tự fallback sang HTML5 <video>
+   - Có thể dùng JW theo 2 cách:
+     A) mediaId  (file: "https://cdn.jwplayer.com/manifests/<ID>.m3u8")
+     B) file URL (HLS/MP4) qua jwplayer.setup({ file: "..." })
+========================= */
+const JW_LIBRARY = ""; // ví dụ: "https://cdn.jwplayer.com/libraries/XXXXXX.js" (điền của bạn)
+let jwlibLoaded = false;
+async function ensureJW() {
+  if (!JW_LIBRARY) return false;
+  if (jwlibLoaded) return true;
+  await new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = JW_LIBRARY; s.async = true;
+    s.onload = () => { jwlibLoaded = true; res(); };
+    s.onerror = () => rej();
+    document.head.appendChild(s);
+  }).catch(()=>{});
+  return jwlibLoaded;
+}
+
+/* =======================
+   2) Dữ liệu & schema
+   item = {
+     id, title, cover, type: "video"|"images",
+     tags: ["Fall3","..."],
+     sources: {
+       pomf2: ["https://...mp4", "https://...jpg"...],
+       jwplayer: { mediaId?: "abcd1234", file?: "https://...m3u8|mp4" }
+     },
+     images?: ["https://...jpg", ...]  // nếu type=images
+   }
+========================= */
+const state = {
+  items: [], filtered: [], page: 1, perPage: 16,
+  typeFilter: new Set(["images","video"]),
+  srcFilter: new Set(["pomf2","jwplayer"])
+};
+
+// ví dụ demo tối thiểu
+const demo = [
+  {
+    id:"demo-video", title:"Fall3 – Clip demo", cover:"https://picsum.photos/400/560?1",
+    type:"video", tags:["Fall3","mp4","pomf2"],
+    sources:{ pomf2:["https://archive.org/download/SampleVideo1280x7205mb/SampleVideo_1280x720_5mb.mp4"], jwplayer:{} }
+  },
+  {
+    id:"demo-album", title:"Fall4 – Album demo", cover:"https://picsum.photos/400/560?2",
+    type:"images", tags:["Fall4","album"],
+    sources:{ pomf2:[], jwplayer:{} },
+    images:[
+      "https://picsum.photos/1200/1600?3",
+      "https://picsum.photos/1200/1800?4",
+      "https://picsum.photos/1200/1700?5"
+    ]
+  }
+];
+
+/* =======================
+   3) Nạp manifest.json & LinkVD.txt nếu có
+========================= */
+async function loadExternalData() {
+  const loaded = [];
+  // manifest.json
+  try{
+    const res = await fetch("manifest.json",{cache:"no-store"});
+    if(res.ok){
+      const json = await res.json();
+      if(Array.isArray(json)) loaded.push(...json);
+    }
+  }catch(e){}
+  // LinkVD.txt (format: "FallX link, link")
+  try{
+    const res = await fetch("LinkVD.txt",{cache:"no-store"});
+    if(res.ok){
+      const txt = await res.text();
+      const parsed = parseLinkVD(txt);
+      loaded.push(...parsed);
+    }
+  }catch(e){}
+  return loaded;
+}
+
+function parseLinkVD(txt){
+  const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const arr = [];
+  for(const line of lines){
+    // "Fall3 link, link"
+    const m = line.match(/^([^ ]+)\s+(.+)$/);
+    if(!m) continue;
+    const title = m[1];
+    const links = m[2].split(/[,\s]+/).map(s=>s.trim()).filter(Boolean);
+    arr.push({
+      id: slug(title),
+      title, cover:"", type:"video", tags:[title],
+      sources:{ pomf2: links, jwplayer:{} }
+    });
+  }
+  return arr;
+}
+
+/* =======================
+   4) Render grid + filter + pager
+========================= */
+const gridEl = document.getElementById("grid");
+const pagerEl = document.getElementById("pager");
+const qEl = document.getElementById("q");
+const sortEl = document.getElementById("sort");
+
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}
+
+function applyFilters(){
+  const q = qEl.value.trim().toLowerCase();
+  let arr = state.items.filter(it => state.typeFilter.has(it.type));
+
+  // nguồn
+  arr = arr.filter(it=>{
+    const hasPomf = it.sources?.pomf2?.length>0;
+    const hasJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
+    const needPomf = state.srcFilter.has("pomf2");
+    const needJwp = state.srcFilter.has("jwplayer");
+    return (needPomf && hasPomf) || (needJwp && hasJwp) || (!needPomf && !needJwp); // nếu tắt hết -> vẫn hiện
+  });
+
+  if(q){
+    arr = arr.filter(it=>{
+      const hay = (it.title+" "+(it.tags||[]).join(" ")).toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  // sort
+  if(sortEl.value==="az") arr.sort((a,b)=>a.title.localeCompare(b.title));
+  else if(sortEl.value==="za") arr.sort((a,b)=>b.title.localeCompare(a.title));
+  else arr.sort((a,b)=> (b._ts||0)-(a._ts||0)); // mới nhất theo ts nhập
+
+  state.filtered = arr;
+  state.page = 1;
+  renderPage();
+}
+
+function renderPage(){
+  const start = (state.page-1)*state.perPage;
+  const end = start + state.perPage;
+  const pageItems = state.filtered.slice(start,end);
+
+  gridEl.innerHTML = "";
+  for(const it of pageItems){
+    const card = document.createElement("div");
+    card.className = "card";
+    const img = document.createElement("img");
+    img.className = "thumb";
+    img.loading = "lazy";
+    img.alt = "";
+    img.src = it.cover || "https://picsum.photos/400/560?blur=3";
+    card.appendChild(img);
+
+    const body = document.createElement("div");
+    body.className = "body";
+    const h4 = document.createElement("h4");
+    h4.textContent = it.title;
+    body.appendChild(h4);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const t = document.createElement("span");
+    t.className = "tag";
+    t.textContent = it.type==="video" ? "Video" : "Album ảnh";
+    meta.appendChild(t);
+
+    const sPomf = (it.sources?.pomf2?.length||0) > 0;
+    const sJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
+    if(sPomf) meta.appendChild(badge("POMF2","ok"));
+    if(sJwp) meta.appendChild(badge("JW","ok"));
+    body.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const openBtn = document.createElement("button");
+    openBtn.className = "btn";
+    openBtn.textContent = "Mở";
+    openBtn.onclick = ()=>openViewer(it.id);
+    actions.appendChild(openBtn);
+    body.appendChild(actions);
+
+    card.appendChild(body);
+    gridEl.appendChild(card);
+  }
+
+  // pager
+  const pages = Math.max(1, Math.ceil(state.filtered.length / state.perPage));
+  pagerEl.innerHTML = "";
+  if(pages>1){
+    const prev = document.createElement("button");
+    prev.textContent = "← Trước";
+    prev.disabled = state.page===1;
+    prev.onclick = ()=>{state.page--; renderPage()};
+    pagerEl.appendChild(prev);
+
+    const info = document.createElement("span");
+    info.className = "badge";
+    info.textContent = `Trang ${state.page}/${pages}`;
+    pagerEl.appendChild(info);
+
+    const next = document.createElement("button");
+    next.textContent = "Sau →";
+    next.disabled = state.page===pages;
+    next.onclick = ()=>{state.page++; renderPage()};
+    pagerEl.appendChild(next);
+  }
+}
+function badge(txt, kind){const s=document.createElement("span");s.className="badge "+(kind||"");s.textContent=txt;return s}
+
+/* =======================
+   5) Viewer (Pomf2 <-> JW Player)
+========================= */
+const modal = document.getElementById("modal");
+const vTitle = document.getElementById("v-title");
+const vType = document.getElementById("v-type");
+const vCover = document.getElementById("v-cover");
+const vTags = document.getElementById("v-tags");
+const vSources = document.getElementById("v-sources");
+const sourceSwitch = document.getElementById("sourceSwitch");
+const videoWrap = document.getElementById("videoWrap");
+const imagesWrap = document.getElementById("imagesWrap");
+const html5Video = document.getElementById("html5Video");
+const jwDiv = document.getElementById("jwplayerDiv");
+let currentId = null, currentSource = "pomf2";
+
+function getItem(id){return state.items.find(x=>x.id===id)}
+function openViewer(id){
+  const it = getItem(id); if(!it) return;
+  currentId = id;
+
+  vTitle.innerHTML = it.title;
+  vType.textContent = it.type==="video" ? "Video" : "Album ảnh";
+  vCover.src = it.cover || "";
+  vTags.innerHTML = "";
+  (it.tags||[]).forEach(t=> vTags.appendChild(badge(t)));
+
+  const hasPomf = it.sources?.pomf2?.length>0;
+  const hasJwp = !!(it.sources?.jwplayer?.mediaId || it.sources?.jwplayer?.file);
+  vSources.innerHTML = "";
+  if(hasPomf) vSources.appendChild(badge("Pomf2","ok"));
+  if(hasJwp) vSources.appendChild(badge("JW","ok"));
+
+  // source switch
+  sourceSwitch.innerHTML = "";
+  if(it.type==="video"){
+    if(hasPomf){
+      const b = document.createElement("button"); b.className="btn";
+      b.textContent = "Nguồn: POMF2"; b.onclick=()=>switchSource("pomf2");
+      sourceSwitch.appendChild(b);
+    }
+    if(hasJwp){
+      const b = document.createElement("button"); b.className="btn";
+      b.textContent = "Nguồn: JW Player"; b.onclick=()=>switchSource("jwplayer");
+      sourceSwitch.appendChild(b);
+    }
+  }
+
+  // Render main
+  if(it.type==="video"){
+    imagesWrap.style.display="none";
+    videoWrap.style.display="block";
+    // default source
+    const prefer = hasPomf ? "pomf2" : (hasJwp ? "jwplayer" : "pomf2");
+    switchSource(prefer, true);
+  }else{
+    videoWrap.style.display="none";
+    imagesWrap.style.display="block";
+    renderImages(it.images||it.sources?.pomf2||[]);
+  }
+
+  modal.classList.add("open");
+}
+function closeViewer(){
+  modal.classList.remove("open");
+  // cleanup player
+  html5Video.pause();
+  html5Video.removeAttribute("src");
+  html5Video.load();
+  if(window.jwplayer && jwDiv.style.display!=="none"){
+    try{ window.jwplayer(jwDiv).remove(); }catch(e){}
+  }
+}
+
+function markActiveSource(src){
+  [...sourceSwitch.querySelectorAll(".btn")].forEach(b=>b.classList.remove("active"));
+  const idx = src==="pomf2" ? 0 : 1;
+  const btns = [...sourceSwitch.querySelectorAll(".btn")];
+  if(btns[idx]) btns[idx].classList.add("active");
+}
+
+async function switchSource(src, first=false){
+  const it = getItem(currentId); if(!it) return;
+  currentSource = src; markActiveSource(src);
+
+  // cleanup both players
+  html5Video.pause(); html5Video.removeAttribute("src"); html5Video.load();
+  if(window.jwplayer){ try{ window.jwplayer(jwDiv).remove(); }catch(e){} }
+  jwDiv.style.display="none";
+
+  if(src==="pomf2"){
+    const url = (it.sources?.pomf2||[]).find(u=>/\.mp4(\?|$)/i.test(u)) || (it.sources?.pomf2||[])[0];
+    if(!url){ html5Video.removeAttribute("src"); return; }
+    html5Video.src = url;
+    html5Video.poster = it.cover || "";
+    html5Video.load();
+    jwDiv.style.display="none";
+  }else if(src==="jwplayer"){
+    const jwp = it.sources?.jwplayer || {};
+    const hasMediaId = !!jwp.mediaId;
+    const hasFile = !!jwp.file;
+
+    const ok = await ensureJW();
+    if(ok){
+      jwDiv.style.display="block";
+      const setup = { width:"100%", aspectratio:"16:9", image:it.cover||undefined };
+      if(hasMediaId){
+        setup.file = `https://cdn.jwplayer.com/manifests/${jwp.mediaId}.m3u8`;
+      }else if(hasFile){
+        setup.file = jwp.file;
+      }else{
+        jwDiv.style.display="none";
+      }
+      if(setup.file){ window.jwplayer("jwplayerDiv").setup(setup); }
+    }else{
+      // không có JW key → fallback HTML5 từ jwp.file nếu có
+      if(hasFile){
+        html5Video.src = jwp.file; html5Video.poster = it.cover||""; html5Video.load();
+      }
+    }
+  }
+}
+
+function renderImages(arr){
+  imagesWrap.innerHTML = "";
+  if(!arr || !arr.length){
+    const p=document.createElement("p"); p.className="small"; p.textContent="Không có ảnh";
+    imagesWrap.appendChild(p); return;
+  }
+  for(const src of arr){
+    const im = document.createElement("img");
+    im.loading="lazy"; im.src = src;
+    imagesWrap.appendChild(im);
+  }
+}
+
+/* =======================
+   6) Import panel (thêm nhanh)
+========================= */
+const panel = document.getElementById("panel");
+document.getElementById("openPanel").onclick = ()=>panel.classList.add("open");
+document.getElementById("closePanel").onclick = ()=>panel.classList.remove("open");
+
+document.getElementById("addItem").onclick = ()=>{
+  const title = document.getElementById("title").value.trim();
+  if(!title) return alert("Nhập tiêu đề!");
+  const cover = document.getElementById("cover").value.trim();
+  const type = document.getElementById("type").value;
+  const pomf2 = document.getElementById("pomf2").value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
+  const jw = document.getElementById("jw").value.trim();
+
+  const item = {
+    id: slug(title), title, cover, type,
+    tags:[title], _ts: Date.now(),
+    sources:{ pomf2, jwplayer:{} }
+  };
+  if(jw){
+    if(/^https?:\/\//i.test(jw)) item.sources.jwplayer.file = jw;
+    else item.sources.jwplayer.mediaId = jw;
+  }
+  state.items.unshift(item);
+  applyFilters();
+  alert("Đã thêm (chỉ ở bộ nhớ tạm). Nhấn 'Xuất manifest.json' để lưu file.");
+};
+
+document.getElementById("parseBulk").onclick = ()=>{
+  const txt = document.getElementById("bulk").value;
+  const arr = parseLinkVD(txt);
+  arr.forEach(x=>{x._ts=Date.now();});
+  state.items.unshift(...arr);
+  applyFilters();
+  alert(`Đã thêm ${arr.length} mục từ LinkVD.txt (tạm).`);
+};
+
+document.getElementById("exportJson").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state.items,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "manifest.json";
+  a.click();
+};
+
+/* =======================
+   7) UI bindings
+========================= */
+qEl.oninput = ()=>applyFilters();
+sortEl.onchange = ()=>applyFilters();
+document.getElementById("reloadBtn").onclick = async ()=>{
+  const ext = await loadExternalData();
+  // gán timestamp để sort "mới nhất"
+  ext.forEach((it,i)=>{it._ts = Date.now()+i});
+  // merge theo id (tránh trùng)
+  const map = new Map();
+  [...ext, ...state.items].forEach(it=>map.set(it.id, {...map.get(it.id), ...it}));
+  state.items = [...map.values()];
+  applyFilters();
+}
+
+// bộ lọc
+document.querySelectorAll(".f-type").forEach(cb=>{
+  cb.onchange = ()=>{ cb.checked ? state.typeFilter.add(cb.value) : state.typeFilter.delete(cb.value); applyFilters(); };
+});
+document.querySelectorAll(".f-src").forEach(cb=>{
+  cb.onchange = ()=>{ cb.checked ? state.srcFilter.add(cb.value) : state.srcFilter.delete(cb.value); applyFilters(); };
+});
+
+// modal controls
+document.getElementById("closeModal").onclick = closeViewer;
+window.addEventListener("keydown", e=>{ if(e.key==="Escape" && modal.classList.contains("open")) closeViewer(); });
+
+/* =======================
+   8) Khởi động
+========================= */
+(async function init(){
+  state.items = demo.map(x=>({...x, _ts:Date.now()}));
+  // thử nạp thêm nếu có file ngoài
+  try{
+    const extra = await loadExternalData();
+    extra.forEach((it,i)=>it._ts=Date.now()+i);
+    state.items.unshift(...extra);
+  }catch(e){}
+  applyFilters();
+})();
+</script>
+</body>
+</html>
