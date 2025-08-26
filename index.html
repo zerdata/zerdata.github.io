@@ -13,7 +13,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-/* top bar (ihentai-like) */
+/* top bar */
 .topbar{
   position:sticky;top:0;z-index:50;background:#111318;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:10px;padding:10px 14px;
@@ -34,13 +34,22 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
   background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;
   display:flex;flex-direction:column;min-height:100%;
 }
-.card .thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0a0d13}
+.card .thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0a0d13;position:relative}
 .card .body{padding:10px}
 .card h3{margin:0;font-size:14px;line-height:1.3}
 .badge{display:inline-block;margin-top:6px;font-size:11px;color:#0a0d13;background:var(--accent-2);
   padding:3px 6px;border-radius:999px}
 
-/* detail page overlay (viewer) */
+/* lazy skeleton */
+.thumb::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  transform:translateX(-100%); animation:shimmer 1.2s infinite;
+}
+.thumb.loaded::after{ display:none; }
+@keyframes shimmer{ 100%{ transform:translateX(100%);} }
+
+/* viewer */
 .viewer{position:fixed;inset:0;background:#07080bbf;backdrop-filter:saturate(140%) blur(4px);
   display:none;z-index:100}
 .viewer.open{display:block}
@@ -67,15 +76,13 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 .btn.primary{background:var(--accent);border-color:#385ea8;color:#061225}
 .close{margin-left:8px}
 
-/* search box */
+/* search */
 .searchbar{display:flex;gap:8px;margin:8px 0 12px}
 .searchbar input{
   width:100%;padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);outline:none
 }
 .sort{padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text)}
-
 .small{font-size:12px;color:var(--muted)}
-.footer{padding:12px;text-align:center;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -99,7 +106,6 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
     </div>
 
     <div id="grid" class="grid"></div>
-    <div class="footer small">Dữ liệu đọc từ <code>zerdata_make_manifest.json</code> · Bìa: <code>BG/&lt;slug(name)&gt;.bg.(jpg|jpeg|png|webp)</code></div>
   </div>
 
   <!-- Viewer -->
@@ -129,6 +135,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
   </div>
 
 <script>
+/* ---------- refs ---------- */
 const grid = document.getElementById("grid");
 const qEl = document.getElementById("q");
 const sortEl = document.getElementById("sort");
@@ -141,44 +148,91 @@ const vTags = document.getElementById("v-tags");
 const iframe = document.getElementById("iframe");
 const openArchive = document.getElementById("openArchive");
 const copyLink = document.getElementById("copyLink");
-let items = [], filtered = [];
 
-function slug(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^[-]+|[-]+$/g,"");}
-async function headOK(url){ try{ const r=await fetch(url,{method:"HEAD"}); return r.ok; }catch(e){ return false; } }
-async function resolveCover(id){
-  const exts=["jpg","jpeg","png","webp"];
-  for(const e of exts){ const u=`BG/${id}.bg.${e}`; if(await headOK(u)) return u; }
+let items = [], filtered = [];
+let BG_INDEX = [];       // danh sách ảnh từ bg_index.json
+let lazyObs;             // IntersectionObserver
+
+/* ---------- BG index & matching ---------- */
+async function loadBGIndex(){
+  try{
+    const r = await fetch("bg_index.json?"+Date.now());
+    BG_INDEX = r.ok ? await r.json() : [];
+  }catch(e){ BG_INDEX = []; }
+}
+function norm(s){
+  if(!s) return "";
+  try{ s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
+  s = s.toLowerCase().replace(/\.bg$/,'').replace(/\.[a-z0-9]+$/,'');
+  s = s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return s;
+}
+function findBestCoverForTitle(title){
+  if(!BG_INDEX.length) return "";
+  const key = norm(title);
+  let best=null, score=-1;
+  for(const f of BG_INDEX){
+    const n = norm(f.name);
+    let sc=0;
+    if(n===key) sc=100;
+    else if(n.includes(key)||key.includes(n)) sc=80;
+    else{
+      const parts=key.split('-').filter(Boolean);
+      let hits=0; for(const p of parts){ if(n.includes(p)) hits++; }
+      sc=hits;
+    }
+    if(sc>score){ score=sc; best=f; }
+  }
+  return score<=0 ? "" : (best?.path||"");
+}
+async function resolveCoverBySlugFallback(slugId){
+  const exts=["jpg","jpeg","png","webp","gif","avif"];
+  for(const e of exts){
+    const url=`BG/${slugId}.bg.${e}`;
+    try{ const r=await fetch(url,{method:"HEAD"}); if(r.ok) return url; }catch(e){}
+  }
   return "";
 }
-function parseArchive(link){
-  // chấp nhận /details/<id> hoặc /embed/<id>
-  const m = String(link).match(/archive\.org\/(?:details|embed)\/([^/?#]+)/i);
-  return m ? m[1] : null;
-}
+
+/* ---------- data ---------- */
 async function loadManifest(){
-  try{
-    const res = await fetch("zerdata_make_manifest.json?"+Date.now());
-    const rows = await res.json();
-    const out=[];
-    for(const r of rows){
-      const id = slug(r.name);
-      const cover = await resolveCover(id);
-      const archiveId = parseArchive(r.link);
-      if(!archiveId) continue; // chỉ nhận Archive
-      out.push({
-        id, title:r.name, cover,
-        archiveId, embed:`https://archive.org/embed/${archiveId}`,
-        page:`https://archive.org/details/${archiveId}`
-      });
-    }
-    return out;
-  }catch(e){ return []; }
+  await loadBGIndex();
+
+  const res = await fetch("zerdata_make_manifest.json?"+Date.now());
+  if(!res.ok) return [];
+  const rows = await res.json();
+
+  const out=[];
+  for(const r of rows){
+    const m = String(r.link).match(/archive\.org\/(?:details|embed)\/([^/?#]+)/i);
+    if(!m) continue;
+    const archiveId = m[1];
+
+    const slugId = (r.name || archiveId).toLowerCase()
+      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+    let cover = findBestCoverForTitle(r.name || archiveId);
+    if(!cover) cover = await resolveCoverBySlugFallback(slugId);
+
+    out.push({
+      id: slugId,
+      title: r.name || archiveId,
+      cover,
+      archiveId,
+      embed: `https://archive.org/embed/${archiveId}`,
+      page:  `https://archive.org/details/${archiveId}`,
+      _ts: Date.now()
+    });
+  }
+  return out;
 }
 
+/* ---------- render grid with lazy images ---------- */
 function render(){
-  grid.innerHTML = "";
+  grid.innerHTML="";
   const q = qEl.value.trim().toLowerCase();
   filtered = items.filter(it => !q || it.title.toLowerCase().includes(q));
+
   if(sortEl.value==="az") filtered.sort((a,b)=>a.title.localeCompare(b.title));
   else if(sortEl.value==="za") filtered.sort((a,b)=>b.title.localeCompare(a.title));
   else filtered.sort((a,b)=> (b._ts||0)-(a._ts||0));
@@ -186,39 +240,75 @@ function render(){
   for(const it of filtered){
     const card = document.createElement("div");
     card.className="card"; card.onclick=()=>openViewer(it.id);
+
     const img = document.createElement("img");
-    img.className="thumb"; img.src = it.cover || "https://picsum.photos/400/560?blur=3";
+    img.className="thumb";
+    img.alt = it.title;
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.referrerPolicy = "no-referrer";
+    img.dataset.src = it.cover || "https://picsum.photos/400/560?blur=3";
     card.appendChild(img);
+
     const body = document.createElement("div"); body.className="body";
     const h3 = document.createElement("h3"); h3.textContent = it.title; body.appendChild(h3);
     const b = document.createElement("span"); b.className="badge"; b.textContent="Archive"; body.appendChild(b);
     card.appendChild(body);
+
     grid.appendChild(card);
   }
+  setupLazyImages();
+}
+function setupLazyImages(){
+  if(lazyObs){ lazyObs.disconnect(); }
+  const opts = { root:null, rootMargin:"200px 0px", threshold:0.01 };
+  lazyObs = new IntersectionObserver(onLazy, opts);
+  const all = Array.from(grid.querySelectorAll('img.thumb'));
+  all.forEach((img, i)=>{
+    if(i<12) eagerLoad(img); else lazyObs.observe(img);
+  });
+}
+function onLazy(entries, obs){
+  for(const e of entries){
+    if(e.isIntersecting){
+      eagerLoad(e.target);
+      obs.unobserve(e.target);
+    }
+  }
+}
+function eagerLoad(img){
+  if(img.src) return;
+  img.src = img.dataset.src;
+  img.onload = ()=> img.classList.add('loaded');
+  img.onerror = ()=> img.classList.add('loaded');
 }
 
+/* ---------- viewer ---------- */
 function getItem(id){ return items.find(x=>x.id===id); }
+document.getElementById("closeBtn").onclick = ()=>{ viewer.classList.remove("open"); iframe.src=""; };
+
+function tag(t){ const s=document.createElement("span"); s.className="tag"; s.textContent=t; return s; }
 
 function openViewer(id){
   const it = getItem(id); if(!it) return;
   vTitle.textContent = it.title;
   vCover.src = it.cover || "";
+  vCover.classList.add('loaded');
   vTags.innerHTML = ""; vTags.appendChild(tag("Archive"));
   iframe.src = it.embed; openArchive.href = it.page;
   viewer.classList.add("open");
 }
-function tag(t){ const s=document.createElement("span"); s.className="tag"; s.textContent=t; return s; }
-document.getElementById("closeBtn").onclick = ()=>{ viewer.classList.remove("open"); iframe.src=""; };
 
 copyLink.onclick = async ()=>{
   const url = iframe.src;
   try{ await navigator.clipboard.writeText(url); copyLink.textContent="Đã copy"; setTimeout(()=>copyLink.textContent="Copy link nhúng",1500); }
   catch(e){ alert(url); }
-}
+};
 
 qEl.oninput = render; sortEl.onchange = render;
 refreshBtn.onclick = async ()=>{ items = await loadManifest(); items.forEach((it,i)=>it._ts=Date.now()+i); render(); };
 
+/* ---------- init ---------- */
 (async function init(){
   items = await loadManifest();
   items.forEach((it,i)=>it._ts=Date.now()+i);
