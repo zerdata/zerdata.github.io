@@ -2,292 +2,183 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>XGallery · Archive</title>
-<meta name="theme-color" content="#111214">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>XGallery · Archive (simple)</title>
 <style>
-:root{ --bg:#0d0f12; --panel:#151922; --card:#1a1f2b; --text:#e8eef6; --muted:#a9b4c7; --border:#232b3b; --accent:#7aa7ff; --accent-2:#ffd36e; }
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  :root{--bg:#0d0f12;--card:#161b26;--text:#e9eef6;--muted:#a8b4c7;--bd:#222a3a;--accent:#7aa7ff}
+  *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;background:#11141b;border-bottom:1px solid var(--bd);padding:10px 14px;font-weight:700}
+  .wrap{max-width:1100px;margin:0 auto;padding:12px}
+  .tools{display:flex;gap:8px;margin:8px 0 12px}
+  .tools input,.tools select{background:var(--card);border:1px solid var(--bd);color:var(--text);padding:10px;border-radius:10px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media(min-width:720px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:1024px){.grid{grid-template-columns:repeat(5,1fr)}}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer}
+  .thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0a0d13;position:relative}
+  .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:sh 1.2s infinite}
+  .thumb.loaded::after{display:none}
+  @keyframes sh{100%{transform:translateX(100%)}}
+  .body{padding:10px} .body h3{margin:0;font-size:14px;line-height:1.3}
+  .badge{display:inline-block;margin-top:6px;padding:3px 6px;font-size:11px;border-radius:999px;background:#ffd36e;color:#0d0f12}
 
-/* top bar */
-.topbar{ position:sticky;top:0;z-index:50;background:#111318;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;padding:10px 14px;}
-.hamb{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);display:grid;place-items:center}
-.brand{font-weight:700;letter-spacing:.2px}
-.brand i{font-style:normal;color:var(--accent)}
-.top-actions{margin-left:auto;display:flex;gap:8px}
-.iconbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--panel);display:grid;place-items:center;cursor:pointer}
-
-/* layout */
-.shell{max-width:1100px;margin:0 auto;padding:12px}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
-@media(min-width:720px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(min-width:1024px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-
-.card{ background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;
-  display:flex;flex-direction:column;min-height:100%;}
-.card .thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0a0d13;position:relative}
-.card .body{padding:10px}
-.card h3{margin:0;font-size:14px;line-height:1.3}
-.badge{display:inline-block;margin-top:6px;font-size:11px;color:#0a0d13;background:var(--accent-2);
-  padding:3px 6px;border-radius:999px}
-
-/* lazy skeleton */
-.thumb::after{ content:""; position:absolute; inset:0;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
-  transform:translateX(-100%); animation:shimmer 1.2s infinite;}
-.thumb.loaded::after{display:none}
-@keyframes shimmer{100%{transform:translateX(100%)}}
-
-/* viewer */
-.viewer{position:fixed;inset:0;background:#07080bbf;backdrop-filter:saturate(140%) blur(4px);display:none;z-index:100}
-.viewer.open{display:block}
-.page{ position:absolute;inset:8px;inset-block-end:12px;background:var(--panel);border:1px solid var(--border);
-  border-radius:14px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;}
-.page header{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.page header .title{font-weight:700}
-.page header .pill{margin-left:auto;font-size:12px;color:var(--muted)}
-.page .main{display:grid;grid-template-columns:1fr;gap:14px;padding:12px;overflow:auto}
-@media(min-width:920px){.page .main{grid-template-columns:2fr 1fr}}
-.player{width:100%;aspect-ratio:16/9;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#000}
-.side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;height:max-content}
-.meta-row{display:grid;grid-template-columns:92px 1fr;gap:8px;margin:8px 0;color:var(--muted);font-size:14px}
-.taglist{display:flex;gap:8px;flex-wrap:wrap}
-.tag{border:1px solid var(--border);padding:2px 8px;border-radius:999px;color:var(--muted);font-size:12px}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.btn{border:1px solid var(--border);background:var(--card);color:var(--text);padding:8px 10px;border-radius:10px;cursor:pointer}
-.btn.primary{background:var(--accent);border-color:#385ea8;color:#061225}
-.close{margin-left:8px}
-
-/* search */
-.searchbar{display:flex;gap:8px;margin:8px 0 12px}
-.searchbar input{width:100%;padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);outline:none}
-.sort{padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text)}
-.small{font-size:12px;color:var(--muted)}
+  /* viewer */
+  #viewer{position:fixed;inset:0;background:#000a;backdrop-filter:blur(4px);display:none}
+  #viewer.open{display:flex;flex-direction:column}
+  #vhead{display:flex;gap:10px;align-items:center;padding:10px 12px;background:#11141b;border-bottom:1px solid var(--bd)}
+  #vtitle{font-weight:700} .pill{margin-left:auto;color:var(--muted);font-size:12px}
+  #vmain{flex:1;display:grid;gap:12px;padding:12px;grid-template-columns:1fr}
+  @media(min-width:920px){#vmain{grid-template-columns:2fr 1fr}}
+  .player{width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--bd);border-radius:12px}
+  .side{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;height:max-content}
+  .btn{border:1px solid var(--bd);background:var(--card);color:var(--text);padding:8px 10px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:#3a5fa8;color:#061225}
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="hamb">☰</div>
-    <div class="brand">i<b>H</b><i>entai</i> · <span style="opacity:.8">Archive</span></div>
-    <div class="top-actions">
-      <div class="iconbtn" id="refreshBtn">⟳</div>
-      <div class="iconbtn" id="themeBtn">☾</div>
-    </div>
+<header>XGallery · Archive</header>
+
+<div class="wrap">
+  <div class="tools">
+    <input id="q" placeholder="Tìm theo tên…">
+    <select id="sort">
+      <option value="new">Mới nhất</option>
+      <option value="az">A → Z</option>
+      <option value="za">Z → A</option>
+    </select>
   </div>
+  <div id="grid" class="grid"></div>
+</div>
 
-  <div class="shell">
-    <div class="searchbar">
-      <input id="q" placeholder="Tìm theo tên..." />
-      <select id="sort" class="sort">
-        <option value="new">Mới nhất</option>
-        <option value="az">A → Z</option>
-        <option value="za">Z → A</option>
-      </select>
-    </div>
-
-    <div id="grid" class="grid"></div>
+<!-- Viewer -->
+<div id="viewer">
+  <div id="vhead">
+    <div id="vtitle"></div>
+    <div class="pill">Nguồn: Archive</div>
+    <button id="closeBtn" class="btn">Đóng</button>
   </div>
-
-  <!-- Viewer -->
-  <div id="viewer" class="viewer">
-    <div class="page">
-      <header>
-        <div class="title" id="v-title"></div>
-        <div class="pill" id="v-pill">Nguồn: Archive.org</div>
-        <button class="btn close" id="closeBtn">Đóng</button>
-      </header>
-      <div class="main">
-        <div>
-          <iframe id="iframe" class="player" frameborder="0" allowfullscreen referrerpolicy="no-referrer"></iframe>
-          <div class="controls">
-            <a id="openArchive" class="btn primary" target="_blank" rel="noopener">Mở trên Archive</a>
-            <button id="copyLink" class="btn">Copy link nhúng</button>
-          </div>
-        </div>
-        <aside class="side">
-          <div class="small">Bìa</div>
-          <img id="v-cover" class="thumb" style="width:100%;aspect-ratio:3/4;border-radius:10px;border:1px solid var(--border);margin:6px 0;background:#0a0d13"/>
-          <div class="meta-row"><div>Tags</div><div id="v-tags" class="taglist"></div></div>
-          <div class="meta-row"><div>Ghi chú</div><div class="small">Nhúng qua <code>https://archive.org/embed/&lt;id&gt;</code></div></div>
-        </aside>
+  <div id="vmain">
+    <div>
+      <iframe id="iframe" class="player" frameborder="0" allowfullscreen referrerpolicy="no-referrer"></iframe>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <a id="openArchive" class="btn primary" target="_blank" rel="noopener">Mở trên Archive</a>
+        <button id="copyLink" class="btn">Copy link nhúng</button>
       </div>
     </div>
+    <div class="side">
+      <div style="font-size:12px;color:var(--muted)">Bìa</div>
+      <img id="vcover" class="thumb" style="width:100%;aspect-ratio:3/4;border-radius:10px;border:1px solid var(--bd);margin-top:6px">
+    </div>
   </div>
+</div>
 
 <script>
-/* ---------- refs ---------- */
-const grid = document.getElementById("grid");
-const qEl = document.getElementById("q");
-const sortEl = document.getElementById("sort");
-const refreshBtn = document.getElementById("refreshBtn");
+/* ===== helpers ===== */
+const $ = s=>document.querySelector(s);
+const grid = $("#grid"), qEl=$("#q"), sortEl=$("#sort");
+const viewer=$("#viewer"), vtitle=$("#vtitle"), vcover=$("#vcover");
+const iframe=$("#iframe"), openArchive=$("#openArchive"), copyLink=$("#copyLink");
+let items=[], filtered=[], lazyObs;
 
-const viewer = document.getElementById("viewer");
-const vTitle = document.getElementById("v-title");
-const vCover = document.getElementById("v-cover");
-const vTags = document.getElementById("v-tags");
-const iframe = document.getElementById("iframe");
-const openArchive = document.getElementById("openArchive");
-const copyLink = document.getElementById("copyLink");
-
-let items = [], filtered = [];
-let lazyObs;
-
-/* ---------- helpers ---------- */
+/* slug: như cũ */
 function slugify(s){
-  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  return String(s||"").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 }
-async function headOK(url){
-  try{ const r=await fetch(url,{method:"HEAD"}); return r.ok; }catch(e){ return false; }
-}
-/* sinh danh sách ứng viên file bìa theo nhiều pattern */
-function candidateCovers(name, archiveId){
+async function headOK(url){ try{ const r=await fetch(url,{method:"HEAD"}); return r.ok; }catch{return false;} }
+
+/* lấy bìa THEO MẪU CŨ:
+   1) BG/<slug(name)>.bg.(jpg|jpeg|png|webp)
+   2) nếu không có, thử BG/<slug(archiveId)>.bg.(...)
+*/
+async function resolveCover(name, archiveId){
+  const exts = ["jpg","jpeg","png","webp"];
   const sName = slugify(name||"");
   const sId   = slugify(archiveId||"");
-  const exts  = ["jpg","jpeg","png","webp","gif","avif"];
-
-  // tách bớt hậu tố phổ biến
-  const strip = t => t.replace(/-hentai-z-?(\.|$)/g,"-hentai-z-").replace(/-hentai-z-bot$/,"")
-                      .replace(/-bot$/,"").replace(/-raw$/,"").replace(/-uncen(sored)?$/,"")
-                      .replace(/-censored$/,"");
-
-  const bases = Array.from(new Set([
-    sName, sId,
-    strip(sName), strip(sId)
-  ])).filter(Boolean);
-
-  const cands = [];
-  for(const b of bases){
-    for(const e of exts){
-      cands.push(`BG/${b}.bg.${e}`);
-    }
-  }
-  for(const b of bases){
-    for(const e of exts){
-      cands.push(`BG/${b}.${e}`);
-    }
-  }
-  // cuối: thử thêm các biến thể có hậu tố phổ biến
-  const suffixes = ["-hentai-z-bot","-bot","-raw"];
-  for(const base of bases){
-    for(const suf of suffixes){
-      for(const e of exts){
-        cands.push(`BG/${base}${suf}.bg.${e}`);
-        cands.push(`BG/${base}${suf}.${e}`);
-      }
-    }
-  }
-  return Array.from(new Set(cands));
-}
-async function resolveCover(name, archiveId){
-  const list = candidateCovers(name, archiveId);
-  for(const u of list){ if(await headOK(u)) return u; }
-  return ""; // không có bìa cũng OK
+  for(const u of exts.map(e=>`BG/${sName}.bg.${e}`)){ if(await headOK(u)) return u; }
+  for(const u of exts.map(e=>`BG/${sId}.bg.${e}`)){ if(await headOK(u)) return u; }
+  return ""; // không có bìa cũng ok
 }
 
-/* ---------- data ---------- */
+/* ===== data ===== */
 async function loadManifest(){
   const res = await fetch("zerdata_make_manifest.json?"+Date.now());
   if(!res.ok) return [];
   const rows = await res.json();
   const out=[];
   for(const r of rows){
-    const m = String(r.link).match(/archive\.org\/(?:details|embed)\/([^/?#]+)/i);
+    const m = String(r.link).match(/archive\.org\/(?:details|embed)\/([^\/?#]+)/i);
     if(!m) continue;
     const archiveId = m[1];
-    const id = slugify(r.name || archiveId);
+    const id = slugify(r.name||archiveId);
     const cover = await resolveCover(r.name, archiveId);
     out.push({
-      id, title: r.name || archiveId,
-      cover,
-      archiveId,
-      embed: `https://archive.org/embed/${archiveId}`,
-      page:  `https://archive.org/details/${archiveId}`,
+      id, title:r.name||archiveId, cover,
+      embed:`https://archive.org/embed/${archiveId}`,
+      page:`https://archive.org/details/${archiveId}`,
       _ts: Date.now()
     });
   }
   return out;
 }
 
-/* ---------- render grid with lazy images ---------- */
+/* ===== render grid (lazy) ===== */
 function render(){
   grid.innerHTML="";
   const q = qEl.value.trim().toLowerCase();
-  filtered = items.filter(it => !q || it.title.toLowerCase().includes(q));
-
+  filtered = items.filter(x=>!q || x.title.toLowerCase().includes(q));
   if(sortEl.value==="az") filtered.sort((a,b)=>a.title.localeCompare(b.title));
   else if(sortEl.value==="za") filtered.sort((a,b)=>b.title.localeCompare(a.title));
-  else filtered.sort((a,b)=> (b._ts||0)-(a._ts||0));
+  else filtered.sort((a,b)=>(b._ts||0)-(a._ts||0));
 
   for(const it of filtered){
-    const card = document.createElement("div");
-    card.className="card"; card.onclick=()=>openViewer(it.id);
-
+    const card = document.createElement("div"); card.className="card"; card.onclick=()=>openViewer(it.id);
     const img = document.createElement("img");
-    img.className="thumb";
-    img.alt = it.title;
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.referrerPolicy = "no-referrer";
+    img.className="thumb"; img.alt=it.title; img.loading="lazy"; img.decoding="async";
     img.dataset.src = it.cover || "https://picsum.photos/400/560?blur=3";
     card.appendChild(img);
-
     const body = document.createElement("div"); body.className="body";
     const h3 = document.createElement("h3"); h3.textContent = it.title; body.appendChild(h3);
     const b = document.createElement("span"); b.className="badge"; b.textContent="Archive"; body.appendChild(b);
     card.appendChild(body);
-
     grid.appendChild(card);
   }
-  setupLazyImages();
+  setupLazy();
 }
-function setupLazyImages(){
-  if(lazyObs){ lazyObs.disconnect(); }
-  const opts = { root:null, rootMargin:"200px 0px", threshold:0.01 };
-  lazyObs = new IntersectionObserver(onLazy, opts);
+function setupLazy(){
+  if(lazyObs) lazyObs.disconnect();
+  lazyObs = new IntersectionObserver((ents,obs)=>{
+    ents.forEach(e=>{
+      if(e.isIntersecting){
+        const img = e.target; if(!img.src){ img.src = img.dataset.src; img.onload=()=>img.classList.add('loaded'); img.onerror=()=>img.classList.add('loaded'); }
+        obs.unobserve(img);
+      }
+    });
+  }, {root:null,rootMargin:"200px 0px",threshold:0.01});
   const all = Array.from(grid.querySelectorAll('img.thumb'));
-  all.forEach((img, i)=>{ if(i<12) eagerLoad(img); else lazyObs.observe(img); });
-}
-function onLazy(entries, obs){
-  for(const e of entries){ if(e.isIntersecting){ eagerLoad(e.target); obs.unobserve(e.target); } }
-}
-function eagerLoad(img){
-  if(img.src) return;
-  img.src = img.dataset.src;
-  img.onload = ()=> img.classList.add('loaded');
-  img.onerror = ()=> img.classList.add('loaded');
+  all.forEach((img,i)=>{ if(i<8){ img.src=img.dataset.src; img.onload=()=>img.classList.add('loaded'); } else lazyObs.observe(img); });
 }
 
-/* ---------- viewer ---------- */
+/* ===== viewer ===== */
 function getItem(id){ return items.find(x=>x.id===id); }
-document.getElementById("closeBtn").onclick = ()=>{ viewer.classList.remove("open"); iframe.src=""; };
-function tag(t){ const s=document.createElement("span"); s.className="tag"; s.textContent=t; return s; }
-
 function openViewer(id){
   const it = getItem(id); if(!it) return;
-  vTitle.textContent = it.title;
-  vCover.src = it.cover || "";
-  vCover.classList.add('loaded');
-  vTags.innerHTML = ""; vTags.appendChild(tag("Archive"));
+  vtitle.textContent = it.title;
+  vcover.src = it.cover || "";
+  vcover.classList.add('loaded');
   iframe.src = it.embed; openArchive.href = it.page;
   viewer.classList.add("open");
 }
-
-copyLink.onclick = async ()=>{
-  const url = iframe.src;
-  try{ await navigator.clipboard.writeText(url); copyLink.textContent="Đã copy"; setTimeout(()=>copyLink.textContent="Copy link nhúng",1500); }
-  catch(e){ alert(url); }
-};
+document.getElementById("closeBtn").onclick = ()=>{ viewer.classList.remove("open"); iframe.src=""; };
+copyLink.onclick = async ()=>{ try{ await navigator.clipboard.writeText(iframe.src); copyLink.textContent="Đã copy"; setTimeout(()=>copyLink.textContent="Copy link nhúng",1200);}catch(e){ alert(iframe.src); } };
 
 qEl.oninput = render; sortEl.onchange = render;
-refreshBtn.onclick = async ()=>{ items = await loadManifest(); items.forEach((it,i)=>it._ts=Date.now()+i); render(); };
 
-/* ---------- init ---------- */
-(async function init(){
+/* ===== init ===== */
+(async function(){
   items = await loadManifest();
-  items.forEach((it,i)=>it._ts=Date.now()+i);
+  items.forEach((it,i)=>it._ts = Date.now()+i);
   render();
 })();
 </script>
