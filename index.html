@@ -6,18 +6,13 @@
 <title>XGallery · Archive</title>
 <meta name="theme-color" content="#111214">
 <style>
-:root{
-  --bg:#0d0f12; --panel:#151922; --card:#1a1f2b; --text:#e8eef6; --muted:#a9b4c7;
-  --border:#232b3b; --accent:#7aa7ff; --accent-2:#ffd36e;
-}
+:root{ --bg:#0d0f12; --panel:#151922; --card:#1a1f2b; --text:#e8eef6; --muted:#a9b4c7; --border:#232b3b; --accent:#7aa7ff; --accent-2:#ffd36e; }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
 /* top bar */
-.topbar{
-  position:sticky;top:0;z-index:50;background:#111318;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;padding:10px 14px;
-}
+.topbar{ position:sticky;top:0;z-index:50;background:#111318;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;padding:10px 14px;}
 .hamb{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);display:grid;place-items:center}
 .brand{font-weight:700;letter-spacing:.2px}
 .brand i{font-style:normal;color:var(--accent)}
@@ -30,10 +25,8 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 @media(min-width:720px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:1024px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
-.card{
-  background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;
-  display:flex;flex-direction:column;min-height:100%;
-}
+.card{ background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;
+  display:flex;flex-direction:column;min-height:100%;}
 .card .thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0a0d13;position:relative}
 .card .body{padding:10px}
 .card h3{margin:0;font-size:14px;line-height:1.3}
@@ -41,33 +34,24 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
   padding:3px 6px;border-radius:999px}
 
 /* lazy skeleton */
-.thumb::after{
-  content:""; position:absolute; inset:0;
+.thumb::after{ content:""; position:absolute; inset:0;
   background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
-  transform:translateX(-100%); animation:shimmer 1.2s infinite;
-}
-.thumb.loaded::after{ display:none; }
-@keyframes shimmer{ 100%{ transform:translateX(100%);} }
+  transform:translateX(-100%); animation:shimmer 1.2s infinite;}
+.thumb.loaded::after{display:none}
+@keyframes shimmer{100%{transform:translateX(100%)}}
 
 /* viewer */
-.viewer{position:fixed;inset:0;background:#07080bbf;backdrop-filter:saturate(140%) blur(4px);
-  display:none;z-index:100}
+.viewer{position:fixed;inset:0;background:#07080bbf;backdrop-filter:saturate(140%) blur(4px);display:none;z-index:100}
 .viewer.open{display:block}
-.page{
-  position:absolute;inset:8px;inset-block-end:12px;background:var(--panel);border:1px solid var(--border);
-  border-radius:14px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;
-}
+.page{ position:absolute;inset:8px;inset-block-end:12px;background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;}
 .page header{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .page header .title{font-weight:700}
 .page header .pill{margin-left:auto;font-size:12px;color:var(--muted)}
 .page .main{display:grid;grid-template-columns:1fr;gap:14px;padding:12px;overflow:auto}
 @media(min-width:920px){.page .main{grid-template-columns:2fr 1fr}}
-.player{
-  width:100%;aspect-ratio:16/9;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#000
-}
-.side{
-  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;height:max-content
-}
+.player{width:100%;aspect-ratio:16/9;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#000}
+.side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;height:max-content}
 .meta-row{display:grid;grid-template-columns:92px 1fr;gap:8px;margin:8px 0;color:var(--muted);font-size:14px}
 .taglist{display:flex;gap:8px;flex-wrap:wrap}
 .tag{border:1px solid var(--border);padding:2px 8px;border-radius:999px;color:var(--muted);font-size:12px}
@@ -78,9 +62,7 @@ html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,
 
 /* search */
 .searchbar{display:flex;gap:8px;margin:8px 0 12px}
-.searchbar input{
-  width:100%;padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);outline:none
-}
+.searchbar input{width:100%;padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text);outline:none}
 .sort{padding:10px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text)}
 .small{font-size:12px;color:var(--muted)}
 </style>
@@ -150,73 +132,75 @@ const openArchive = document.getElementById("openArchive");
 const copyLink = document.getElementById("copyLink");
 
 let items = [], filtered = [];
-let BG_INDEX = [];       // danh sách ảnh từ bg_index.json
-let lazyObs;             // IntersectionObserver
+let lazyObs;
 
-/* ---------- BG index & matching ---------- */
-async function loadBGIndex(){
-  try{
-    const r = await fetch("bg_index.json?"+Date.now());
-    BG_INDEX = r.ok ? await r.json() : [];
-  }catch(e){ BG_INDEX = []; }
+/* ---------- helpers ---------- */
+function slugify(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 }
-function norm(s){
-  if(!s) return "";
-  try{ s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
-  s = s.toLowerCase().replace(/\.bg$/,'').replace(/\.[a-z0-9]+$/,'');
-  s = s.replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  return s;
+async function headOK(url){
+  try{ const r=await fetch(url,{method:"HEAD"}); return r.ok; }catch(e){ return false; }
 }
-function findBestCoverForTitle(title){
-  if(!BG_INDEX.length) return "";
-  const key = norm(title);
-  let best=null, score=-1;
-  for(const f of BG_INDEX){
-    const n = norm(f.name);
-    let sc=0;
-    if(n===key) sc=100;
-    else if(n.includes(key)||key.includes(n)) sc=80;
-    else{
-      const parts=key.split('-').filter(Boolean);
-      let hits=0; for(const p of parts){ if(n.includes(p)) hits++; }
-      sc=hits;
+/* sinh danh sách ứng viên file bìa theo nhiều pattern */
+function candidateCovers(name, archiveId){
+  const sName = slugify(name||"");
+  const sId   = slugify(archiveId||"");
+  const exts  = ["jpg","jpeg","png","webp","gif","avif"];
+
+  // tách bớt hậu tố phổ biến
+  const strip = t => t.replace(/-hentai-z-?(\.|$)/g,"-hentai-z-").replace(/-hentai-z-bot$/,"")
+                      .replace(/-bot$/,"").replace(/-raw$/,"").replace(/-uncen(sored)?$/,"")
+                      .replace(/-censored$/,"");
+
+  const bases = Array.from(new Set([
+    sName, sId,
+    strip(sName), strip(sId)
+  ])).filter(Boolean);
+
+  const cands = [];
+  for(const b of bases){
+    for(const e of exts){
+      cands.push(`BG/${b}.bg.${e}`);
     }
-    if(sc>score){ score=sc; best=f; }
   }
-  return score<=0 ? "" : (best?.path||"");
+  for(const b of bases){
+    for(const e of exts){
+      cands.push(`BG/${b}.${e}`);
+    }
+  }
+  // cuối: thử thêm các biến thể có hậu tố phổ biến
+  const suffixes = ["-hentai-z-bot","-bot","-raw"];
+  for(const base of bases){
+    for(const suf of suffixes){
+      for(const e of exts){
+        cands.push(`BG/${base}${suf}.bg.${e}`);
+        cands.push(`BG/${base}${suf}.${e}`);
+      }
+    }
+  }
+  return Array.from(new Set(cands));
 }
-async function resolveCoverBySlugFallback(slugId){
-  const exts=["jpg","jpeg","png","webp","gif","avif"];
-  for(const e of exts){
-    const url=`BG/${slugId}.bg.${e}`;
-    try{ const r=await fetch(url,{method:"HEAD"}); if(r.ok) return url; }catch(e){}
-  }
-  return "";
+async function resolveCover(name, archiveId){
+  const list = candidateCovers(name, archiveId);
+  for(const u of list){ if(await headOK(u)) return u; }
+  return ""; // không có bìa cũng OK
 }
 
 /* ---------- data ---------- */
 async function loadManifest(){
-  await loadBGIndex();
-
   const res = await fetch("zerdata_make_manifest.json?"+Date.now());
   if(!res.ok) return [];
   const rows = await res.json();
-
   const out=[];
   for(const r of rows){
     const m = String(r.link).match(/archive\.org\/(?:details|embed)\/([^/?#]+)/i);
     if(!m) continue;
     const archiveId = m[1];
-
-    const slugId = (r.name || archiveId).toLowerCase()
-      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-
-    let cover = findBestCoverForTitle(r.name || archiveId);
-    if(!cover) cover = await resolveCoverBySlugFallback(slugId);
-
+    const id = slugify(r.name || archiveId);
+    const cover = await resolveCover(r.name, archiveId);
     out.push({
-      id: slugId,
-      title: r.name || archiveId,
+      id, title: r.name || archiveId,
       cover,
       archiveId,
       embed: `https://archive.org/embed/${archiveId}`,
@@ -264,17 +248,10 @@ function setupLazyImages(){
   const opts = { root:null, rootMargin:"200px 0px", threshold:0.01 };
   lazyObs = new IntersectionObserver(onLazy, opts);
   const all = Array.from(grid.querySelectorAll('img.thumb'));
-  all.forEach((img, i)=>{
-    if(i<12) eagerLoad(img); else lazyObs.observe(img);
-  });
+  all.forEach((img, i)=>{ if(i<12) eagerLoad(img); else lazyObs.observe(img); });
 }
 function onLazy(entries, obs){
-  for(const e of entries){
-    if(e.isIntersecting){
-      eagerLoad(e.target);
-      obs.unobserve(e.target);
-    }
-  }
+  for(const e of entries){ if(e.isIntersecting){ eagerLoad(e.target); obs.unobserve(e.target); } }
 }
 function eagerLoad(img){
   if(img.src) return;
@@ -286,7 +263,6 @@ function eagerLoad(img){
 /* ---------- viewer ---------- */
 function getItem(id){ return items.find(x=>x.id===id); }
 document.getElementById("closeBtn").onclick = ()=>{ viewer.classList.remove("open"); iframe.src=""; };
-
 function tag(t){ const s=document.createElement("span"); s.className="tag"; s.textContent=t; return s; }
 
 function openViewer(id){
