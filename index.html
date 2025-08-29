@@ -12,12 +12,27 @@
 }
 *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-/* top bar (giống ảnh 2) */
-.topbar{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;align-items:center;gap:10px}
+/* top bar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--bd);padding:10px 12px;display:flex;align-items:center;gap:10px}
 .iconbtn{width:36px;height:36px;border:1px solid var(--bd);border-radius:10px;background:#121724;display:grid;place-items:center;cursor:pointer}
 .brand{font-weight:800;letter-spacing:.2px}
 .brand i{font-style:normal;color:var(--accent)}
 .top-actions{margin-left:auto;display:flex;gap:10px}
+
+/* --- MENU POPOVER --- */
+.menu-panel{
+  position:fixed; top:58px; left:12px; z-index:40;
+  background:var(--panel); border:1px solid var(--bd); border-radius:12px; padding:8px;
+  width:220px; box-shadow:0 10px 30px rgba(0,0,0,.35); display:none;
+}
+.menu-panel.open{display:block}
+.menu-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; color:var(--text); text-decoration:none;
+}
+.menu-item:hover{background:#0f1420}
+.menu-caption{font-size:12px;color:var(--muted); margin-left:8px}
+.menu-sep{height:1px;background:var(--bd);margin:6px 4px}
 
 /* layout */
 .wrap{max-width:1100px;margin:0 auto;padding:12px}
@@ -56,13 +71,21 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="iconbtn" id="menuBtn">☰</div>
+    <div class="iconbtn" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menuPanel">☰</div>
     <div class="brand"><i>i</i>Hentai · <span style="opacity:.9">Archive</span></div>
     <div class="top-actions">
       <div class="iconbtn" id="refreshBtn">⟳</div>
       <div class="iconbtn" id="themeBtn">☾</div>
     </div>
   </div>
+
+  <!-- POPOVER MENU -->
+  <nav id="menuPanel" class="menu-panel" role="menu" aria-label="Main menu">
+    <a class="menu-item" href="./" role="menuitem">🏠 Trang Chủ</a>
+    <div class="menu-sep"></div>
+    <a class="menu-item" href="https://zerdata.github.io/zerdata1" role="menuitem" target="_self">📚 Gallary · Thư Viện</a>
+    <div class="menu-caption">Mở trang thư viện phụ</div>
+  </nav>
 
   <div class="wrap">
     <div class="tools">
@@ -113,6 +136,10 @@ const iframe= document.getElementById("iframe");
 const openArchive = document.getElementById("openArchive");
 const copyLink = document.getElementById("copyLink");
 
+/* menu refs */
+const menuBtn = document.getElementById('menuBtn');
+const menuPanel = document.getElementById('menuPanel');
+
 let items=[], filtered=[], lazyObs;
 
 /* ===== utils ===== */
@@ -122,7 +149,7 @@ function slugify(s){
     .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 }
 
-/* Tạo danh sách ứng viên ảnh bìa theo quy ước cũ + vài fallback không .bg */
+/* cover candidates */
 function coverCandidates(name, archiveId){
   const sName = slugify(name||"");
   const sId = slugify(archiveId||"");
@@ -134,7 +161,7 @@ function coverCandidates(name, archiveId){
   return list;
 }
 
-/* Gán ảnh: thử tuần tự các src; không dùng HEAD => hiển thị sớm */
+/* set image source with fallbacks */
 function setSmartSrc(img, candidates){
   const tryNext = ()=>{
     const u = candidates.shift();
@@ -143,7 +170,7 @@ function setSmartSrc(img, candidates){
   };
   img.onerror = tryNext;
   img.onload  = ()=>img.classList.add('ready');
-  tryNext(); // bắt đầu
+  tryNext();
 }
 
 /* ===== data ===== */
@@ -184,13 +211,8 @@ function render(){
     const img = document.createElement("img");
     img.className="thumb";
     img.alt = it.title;
-    // ảnh đầu trang: load ngay; còn lại lazy
-    if(idx < 16){
-      setSmartSrc(img, [...it.covers]);   // eager
-    }else{
-      img.dataset.covers = JSON.stringify(it.covers);
-      img.loading = "lazy";               // hint
-    }
+    if(idx < 16){ setSmartSrc(img, [...it.covers]); }
+    else{ img.dataset.covers = JSON.stringify(it.covers); img.loading = "lazy"; }
     card.appendChild(img);
 
     const body = document.createElement("div"); body.className="body";
@@ -202,7 +224,6 @@ function render(){
 
   setupLazy();
 }
-
 function setupLazy(){
   if(lazyObs) lazyObs.disconnect();
   lazyObs = new IntersectionObserver((ents,obs)=>{
@@ -229,7 +250,7 @@ function openViewer(id){
   const it = getItem(id); if(!it) return;
   vTitle.textContent = it.title;
   vCover.classList.remove('ready');
-  setSmartSrc(vCover, [...it.covers]);    // cùng cơ chế cho ảnh bìa lớn
+  setSmartSrc(vCover, [...it.covers]);
   iframe.src = it.embed;
   openArchive.href = it.page;
   viewer.classList.add("open");
@@ -239,6 +260,21 @@ copyLink.onclick = async ()=>{ try{ await navigator.clipboard.writeText(iframe.s
 
 qEl.oninput = render; sortEl.onchange = render;
 refreshBtn.onclick = async ()=>{ items = await loadManifest(); items.forEach((it,i)=>it._ts = Date.now()+i); render(); };
+
+/* ===== menu logic ===== */
+function closeMenu(){ menuPanel.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); }
+function toggleMenu(e){
+  e?.stopPropagation();
+  const open = menuPanel.classList.toggle('open');
+  menuBtn.setAttribute('aria-expanded', open?'true':'false');
+}
+menuBtn.addEventListener('click', toggleMenu);
+document.addEventListener('click', (e)=>{
+  if(!menuPanel.classList.contains('open')) return;
+  const within = menuPanel.contains(e.target) || menuBtn.contains(e.target);
+  if(!within) closeMenu();
+});
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
 
 /* ===== init ===== */
 (async function(){
